@@ -1,0 +1,230 @@
+<style>
+    .FourLayout_Box_img {
+        line-height: 1;
+    }
+    .FourLayout_Box_img img{
+        width: 100%;
+    }
+    @media(max-width:999px) {
+        .FourLayout_all{
+            overflow: hidden;
+        }
+        .FourLayoutSwiper{
+            overflow: unset;
+        }
+        .FourLayout_Box_imgTitle{
+            color: #754D36;
+            font-weight: 700;
+            margin-top: 28px;
+            line-height: 1.2;
+        }
+        .FourLayout_Box_imgText{
+            margin-top: 20px;
+            line-height: 150%;
+            letter-spacing: 0.18px;
+        }
+        .FourLayout_all .swiper-pagination{
+            position: relative !important;
+            bottom: 0px !important;
+            line-height: 1;
+            margin-top: 20px !important;
+            text-align: center;
+        }
+        .FourLayout_all .swiper-pagination-bullet{
+            width: 6px !important;
+            height: 6px !important;
+            margin: 0 5px !important;
+            opacity: 1 !important;
+            background: #D5B6A4 !important;
+            border-radius: 2px !important;
+        }
+        .FourLayout_all .swiper-pagination-bullet-active{
+            background: #754D36 !important; 
+            width: 18px !important;
+            border-radius: 2px !important;
+        }
+    }  
+    @media(min-width:1000px) {
+        .FourLayout_box{
+            display: flex;
+            justify-content: space-between;
+        }
+      {% if section.blocks.size == 4 %}
+             .FourLayout_Box{
+            width: 23%;
+            max-width: 490px;
+        }
+      {% elsif section.blocks.size == 3 %}
+             .FourLayout_Box{
+            width: 30%;
+            max-width: 490px;
+        }
+      {% endif %}
+   
+        .FourLayout_Box_imgTitle{
+            color: #754D36;
+            font-weight: 700;
+            margin-top: 28px;
+            line-height: 1.2;
+        }
+        .FourLayout_Box_imgText{
+            margin-top: 20px;
+            line-height: 150%;
+            letter-spacing: 0.18px;
+        }
+        
+        /* Hide pagination on desktop */
+        .FourLayout_all .swiper-pagination {
+            display: none;
+        }
+    }  
+  
+  /* Remove hover effect and enforce clean image styling */
+.FourLayout_Box_img img {
+    width: 80% ;  /* Adjust as needed */
+    max-width: 100% ;
+    height: auto ;
+    display: block ;
+    margin-left: auto;
+    margin-right: auto ;
+    transform: none ;
+    transition: none;
+    box-shadow: none;
+    filter: none;
+    opacity: 1 ;
+}
+
+.img_hover:hover,
+.hover_img:hover,
+.my_borderRadius:hover {
+    transform: none !important;
+    transition: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+}
+
+   
+</style>  
+
+<div class="{{section.settings.class_scroll}} FourLayout_all margin_top margin_bottom" id="FourLayout_all">
+    <div class="container">
+        <div class="pad_pc">
+            <div class="FourLayout_box">
+            {% for block in section.blocks %} 
+                <div class="FourLayout_Box">
+                    <div class="FourLayout_Box_img img_hover my_borderRadius">
+                        <img src="{{block.settings.img | img_url: '750x'}}" alt="{{block.settings.img.alt}}" class="hover_img">
+                    </div>
+                    {% if block.settings.title !=blank %}
+                        <h3 class="FourLayout_Box_imgTitle my_h_22 my_m_14">
+                            {{block.settings.title}}
+                        </h3> 
+                    {% endif %}
+                    {% if block.settings.text !=blank %}
+                        <div class="FourLayout_Box_imgText my_h_18 my_m_12">
+                            {{block.settings.text}}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        <div class="pad_mobile">
+            <div class="FourLayout_box">
+                <div class="swiper FourLayoutSwiper">
+                    <div class="swiper-wrapper">
+                        {% for block in section.blocks %} 
+                            <div class="FourLayout_Box swiper-slide">
+                                <div class="FourLayout_Box_img img_hover my_borderRadius">
+                                    <img src="{{block.settings.img | img_url: '750x'}}" alt="{{block.settings.img.alt}}" class="hover_img">
+                                </div>
+                                {% if block.settings.title !=blank %}
+                                    <h3 class="FourLayout_Box_imgTitle my_h_22 my_m_14">
+                                        {{block.settings.title}}
+                                    </h3> 
+                                {% endif %}
+                                {% if block.settings.text !=blank %}
+                                    <div class="FourLayout_Box_imgText my_h_18 my_m_14">
+                                        {{block.settings.text}}
+                                    </div>
+                                {% endif %} 
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="swiper-pagination"></div>
+                </div>
+            </div>
+        </div>
+    </div> 
+</div>
+<script>
+    $(document).ready(function(){
+        var swiper = new Swiper(".FourLayoutSwiper", {
+            watchSlidesProgress: true,
+            observer: true,
+            observeParents: true,
+            slideToClickedSlide: true,
+            pagination: {
+                el: ".FourLayoutSwiper .swiper-pagination",
+                clickable: true,
+                dynamicBullets: false,
+            },
+            navigation: {
+                nextEl: ".FourLayout_all .swiper-button-next",
+                prevEl: ".FourLayout_all .swiper-button-prev", 
+            },
+            breakpoints: { 
+                320: {  //当屏幕宽度大于等于320
+                    slidesPerView: 1.7,
+                    spaceBetween: 15
+                }
+            }
+        });
+    })
+</script> 
+{% schema %}
+  {
+    "name": "Four Layout",
+    "class": "FourLayout",
+    "settings": [
+        {
+            "type": "text",
+            "id": "class_scroll",
+            "label": "class scroll"
+        }
+    ],
+    "blocks": [
+   {
+       "name": "text",
+       "type": "text",
+       "settings": [
+            {
+                "type": "image_picker",
+                "id": "img",
+                "label": "img"
+            },
+            {
+                "type": "richtext",
+                "id": "title",
+                "label": "title"
+                
+            },
+            {
+                "type": "richtext",
+                "id": "text",
+                "label": "text"
+                
+            }
+       ]
+   }
+   
+ ],
+    "presets": [
+      {
+        "name": "Four Layout"
+      }
+
+    ]
+
+  }
+{% endschema %}
