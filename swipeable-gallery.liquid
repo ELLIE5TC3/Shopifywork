@@ -1,0 +1,788 @@
+{% comment %}
+  Swipeable Image Gallery Section
+  
+  Usage: Add this section to your theme and configure images in the theme customizer
+  
+  Features:
+  - Responsive design (4 columns desktop, adaptive mobile)
+  - Swipe functionality for desktop and mobile
+  - Navigation arrows (desktop only) and dots
+  - Auto-hide navigation when not needed
+  - Customizable through theme settings
+{% endcomment %}
+
+{% liquid
+  assign section_id = section.id
+  assign max_width = section.settings.max_width | default: 1800
+  assign desktop_padding = section.settings.desktop_padding | default: 55
+  assign mobile_padding = section.settings.mobile_padding | default: 20
+  assign desktop_columns = section.settings.desktop_columns | default: 4
+  assign tablet_columns = section.settings.tablet_columns | default: 3
+  assign mobile_columns = section.settings.mobile_columns | default: 2
+  assign small_mobile_columns = section.settings.small_mobile_columns | default: 1
+  assign show_arrows = section.settings.show_arrows
+  assign show_dots = section.settings.show_dots
+  assign image_aspect_ratio = section.settings.image_aspect_ratio | default: '1/1'
+  assign section_padding_top = section.settings.padding_top | default: 40
+  assign section_padding_bottom = section.settings.padding_bottom | default: 40
+  assign background_color = section.settings.background_color | default: '#f5f5f5'
+  assign gallery_background = section.settings.gallery_background | default: '#ffffff'
+  assign border_radius = section.settings.border_radius | default: 12
+  assign gap_size = section.settings.gap_size | default: 20
+%}
+
+<style>
+  .gallery-section-{{ section_id }} {
+    background-color: {{ background_color }};
+    padding: {{ section_padding_top }}px 0 {{ section_padding_bottom }}px 0;
+  }
+
+  .gallery-section-{{ section_id }} .gallery-wrapper-container {
+    max-width: {{ max_width }}px;
+    margin: 0 auto;
+    padding: 0 {{ desktop_padding }}px;
+    position: relative;
+  }
+
+  .gallery-section-{{ section_id }} .gallery-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: {{ border_radius }}px;
+    background: {{ gallery_background }};
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .gallery-section-{{ section_id }} .gallery-slides-wrapper {
+    display: flex;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+
+  .gallery-section-{{ section_id }} .gallery-slide {
+    display: grid;
+    grid-template-columns: repeat({{ desktop_columns }}, 1fr);
+    gap: {{ gap_size }}px;
+    min-width: 100%;
+    padding: 30px;
+  }
+
+  .gallery-section-{{ section_id }} .gallery-item {
+    aspect-ratio: {{ image_aspect_ratio }};
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f0f0f0;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .gallery-section-{{ section_id }} .gallery-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .gallery-section-{{ section_id }} .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .gallery-section-{{ section_id }} .gallery-item:hover img {
+    transform: scale(1.05);
+  }
+
+  .gallery-section-{{ section_id }} .gallery-item.placeholder {
+    background: linear-gradient(135deg, #e0e0e0 0%, #f0f0f0 100%);
+    display: none; /* Hide placeholders in Shopify version */
+  }
+
+  /* Navigation Arrows */
+  {% if show_arrows %}
+  .gallery-section-{{ section_id }} .nav-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    z-index: 10;
+    opacity: 0.9;
+  }
+
+  .gallery-section-{{ section_id }} .nav-arrow:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .gallery-section-{{ section_id }} .nav-arrow:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: translateY(-50%) scale(0.9);
+  }
+
+  .gallery-section-{{ section_id }} .nav-arrow.prev {
+    left: 20px;
+  }
+
+  .gallery-section-{{ section_id }} .nav-arrow.next {
+    right: 20px;
+  }
+
+  .gallery-section-{{ section_id }} .nav-arrow svg {
+    width: 20px;
+    height: 20px;
+    fill: #333;
+  }
+  {% endif %}
+
+  /* Dots Navigation */
+  {% if show_dots %}
+  .gallery-section-{{ section_id }} .dots-container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .gallery-section-{{ section_id }} .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ddd;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    padding: 0;
+  }
+
+  .gallery-section-{{ section_id }} .dot.active {
+    background: #007bff;
+    transform: scale(1.2);
+  }
+
+  .gallery-section-{{ section_id }} .dot:hover {
+    background: #007bff;
+    opacity: 0.7;
+  }
+  {% endif %}
+
+  /* Hidden state */
+  .gallery-section-{{ section_id }} .hidden {
+    display: none !important;
+  }
+
+  /* Loading/Empty state */
+  .gallery-section-{{ section_id }} .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: #666;
+    font-size: 16px;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .gallery-section-{{ section_id }} .gallery-wrapper-container {
+      padding: 0 30px;
+    }
+    
+    .gallery-section-{{ section_id }} .gallery-slide {
+      grid-template-columns: repeat({{ tablet_columns }}, 1fr);
+      gap: 15px;
+      padding: 20px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .gallery-section-{{ section_id }} .gallery-wrapper-container {
+      padding: 0 {{ mobile_padding }}px;
+    }
+    
+    .gallery-section-{{ section_id }} .gallery-slide {
+      grid-template-columns: repeat({{ mobile_columns }}, 1fr);
+      gap: 12px;
+      padding: 15px;
+    }
+
+    /* Hide arrows on mobile */
+    .gallery-section-{{ section_id }} .nav-arrow {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .gallery-section-{{ section_id }} .gallery-wrapper-container {
+      padding: 0 15px;
+    }
+    
+    .gallery-section-{{ section_id }} .gallery-slide {
+      grid-template-columns: repeat({{ small_mobile_columns }}, 1fr);
+      gap: 10px;
+      padding: 15px;
+    }
+  }
+</style>
+
+<div class="gallery-section-{{ section_id }}">
+  <div class="gallery-wrapper-container">
+    {% if section.blocks.size > 0 %}
+      <div class="gallery-container">
+        <div class="gallery-slides-wrapper" id="galleryWrapper{{ section_id }}">
+          <!-- Slides will be generated by JavaScript -->
+        </div>
+        
+        {% if show_arrows %}
+        <!-- Navigation Arrows (Desktop Only) -->
+        <button class="nav-arrow prev" id="prevBtn{{ section_id }}">
+          <svg viewBox="0 0 24 24">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
+        </button>
+        <button class="nav-arrow next" id="nextBtn{{ section_id }}">
+          <svg viewBox="0 0 24 24">
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+          </svg>
+        </button>
+        {% endif %}
+      </div>
+      
+      {% if show_dots %}
+      <!-- Dots Navigation -->
+      <div class="dots-container" id="dotsContainer{{ section_id }}">
+        <!-- Dots will be generated by JavaScript -->
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <p>Add images to display in the gallery</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if section.blocks.size > 0 %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    class ShopifySwipeableGallery {
+      constructor(sectionId, images, settings) {
+        this.sectionId = sectionId;
+        this.images = images;
+        this.settings = settings;
+        this.currentSlide = 0;
+        this.itemsPerSlide = settings.desktopColumns;
+        this.touchStartX = 0;
+        this.touchEndX = 0;
+        this.isDragging = false;
+        this.startX = 0;
+        this.currentX = 0;
+        this.initialTransform = 0;
+        
+        this.init();
+      }
+
+      init() {
+        this.updateItemsPerSlide();
+        this.setupEventListeners();
+        this.render();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+          this.updateItemsPerSlide();
+          this.render();
+        });
+      }
+
+      updateItemsPerSlide() {
+        const width = window.innerWidth;
+        if (width <= 480) {
+          this.itemsPerSlide = this.settings.smallMobileColumns;
+        } else if (width <= 768) {
+          this.itemsPerSlide = this.settings.mobileColumns;
+        } else if (width <= 1024) {
+          this.itemsPerSlide = this.settings.tabletColumns;
+        } else {
+          this.itemsPerSlide = this.settings.desktopColumns;
+        }
+      }
+
+      setupEventListeners() {
+        const wrapper = document.getElementById(`galleryWrapper${this.sectionId}`);
+        if (!wrapper) return;
+        
+        // Touch events for mobile
+        wrapper.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
+        wrapper.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        wrapper.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+        
+        // Mouse events for desktop
+        wrapper.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        wrapper.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        wrapper.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        wrapper.addEventListener('mouseleave', (e) => this.handleMouseUp(e));
+        
+        // Navigation buttons
+        const prevBtn = document.getElementById(`prevBtn${this.sectionId}`);
+        const nextBtn = document.getElementById(`nextBtn${this.sectionId}`);
+        
+        if (prevBtn) prevBtn.addEventListener('click', () => this.previousSlide());
+        if (nextBtn) nextBtn.addEventListener('click', () => this.nextSlide());
+        
+        // Prevent context menu on long press
+        wrapper.addEventListener('contextmenu', (e) => e.preventDefault());
+      }
+
+      handleTouchStart(e) {
+        this.touchStartX = e.touches[0].clientX;
+        this.startDrag(e.touches[0].clientX);
+      }
+
+      handleTouchMove(e) {
+        if (!this.isDragging) return;
+        e.preventDefault();
+        this.touchEndX = e.touches[0].clientX;
+        this.updateDrag(e.touches[0].clientX);
+      }
+
+      handleTouchEnd(e) {
+        if (!this.isDragging) return;
+        this.endDrag();
+        this.handleSwipe();
+      }
+
+      handleMouseDown(e) {
+        e.preventDefault();
+        this.startDrag(e.clientX);
+      }
+
+      handleMouseMove(e) {
+        if (!this.isDragging) return;
+        e.preventDefault();
+        this.updateDrag(e.clientX);
+      }
+
+      handleMouseUp(e) {
+        if (!this.isDragging) return;
+        this.endDrag();
+        this.handleSwipe();
+      }
+
+      startDrag(clientX) {
+        this.isDragging = true;
+        this.startX = clientX;
+        this.currentX = clientX;
+        this.initialTransform = this.currentSlide * -100;
+        
+        const wrapper = document.getElementById(`galleryWrapper${this.sectionId}`);
+        if (wrapper) {
+          wrapper.style.transition = 'none';
+        }
+      }
+
+      updateDrag(clientX) {
+        this.currentX = clientX;
+        const diff = this.currentX - this.startX;
+        const percentage = (diff / window.innerWidth) * 100;
+        const newTransform = this.initialTransform + percentage;
+        
+        const wrapper = document.getElementById(`galleryWrapper${this.sectionId}`);
+        if (wrapper) {
+          wrapper.style.transform = `translateX(${newTransform}%)`;
+        }
+      }
+
+      endDrag() {
+        this.isDragging = false;
+        const wrapper = document.getElementById(`galleryWrapper${this.sectionId}`);
+        if (wrapper) {
+          wrapper.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+      }
+
+      handleSwipe() {
+        const diff = this.currentX - this.startX;
+        const threshold = 50;
+        
+        if (Math.abs(diff) > threshold) {
+          if (diff > 0 && this.currentSlide > 0) {
+            this.previousSlide();
+          } else if (diff < 0 && this.currentSlide < this.getTotalSlides() - 1) {
+            this.nextSlide();
+          } else {
+            this.goToSlide(this.currentSlide);
+          }
+        } else {
+          this.goToSlide(this.currentSlide);
+        }
+      }
+
+      getTotalSlides() {
+        if (this.images.length === 0) return 0;
+        return Math.ceil(this.images.length / this.itemsPerSlide);
+      }
+
+      render() {
+        const wrapper = document.getElementById(`galleryWrapper${this.sectionId}`);
+        const dotsContainer = document.getElementById(`dotsContainer${this.sectionId}`);
+        
+        if (!wrapper || this.images.length === 0) return;
+
+        const totalSlides = this.getTotalSlides();
+        
+        // Generate slides
+        let slidesHTML = '';
+        for (let i = 0; i < totalSlides; i++) {
+          const startIndex = i * this.itemsPerSlide;
+          const endIndex = Math.min(startIndex + this.itemsPerSlide, this.images.length);
+          
+          slidesHTML += '<div class="gallery-slide">';
+          
+          for (let j = startIndex; j < endIndex; j++) {
+            const image = this.images[j];
+            slidesHTML += `
+              <div class="gallery-item">
+                <img src="${image.url}" alt="${image.alt}" loading="lazy">
+              </div>
+            `;
+          }
+          
+          slidesHTML += '</div>';
+        }
+        
+        wrapper.innerHTML = slidesHTML;
+        
+        // Generate dots
+        if (dotsContainer && totalSlides > 1) {
+          let dotsHTML = '';
+          for (let i = 0; i < totalSlides; i++) {
+            dotsHTML += `<button class="dot ${i === this.currentSlide ? 'active' : ''}" data-slide="${i}"></button>`;
+          }
+          dotsContainer.innerHTML = dotsHTML;
+          dotsContainer.classList.remove('hidden');
+          
+          // Add dot click listeners
+          dotsContainer.querySelectorAll('.dot').forEach((dot, index) => {
+            dot.addEventListener('click', () => this.goToSlide(index));
+          });
+        } else if (dotsContainer) {
+          dotsContainer.classList.add('hidden');
+        }
+        
+        // Ensure current slide is within bounds
+        if (this.currentSlide >= totalSlides) {
+          this.currentSlide = Math.max(0, totalSlides - 1);
+        }
+        
+        this.goToSlide(this.currentSlide);
+        this.updateNavigationButtons();
+      }
+
+      goToSlide(slideIndex) {
+        const totalSlides = this.getTotalSlides();
+        if (slideIndex < 0 || slideIndex >= totalSlides) return;
+        
+        this.currentSlide = slideIndex;
+        const wrapper = document.getElementById(`galleryWrapper${this.sectionId}`);
+        if (wrapper) {
+          wrapper.style.transform = `translateX(-${slideIndex * 100}%)`;
+        }
+        
+        // Update dots
+        const dotsContainer = document.getElementById(`dotsContainer${this.sectionId}`);
+        if (dotsContainer) {
+          const dots = dotsContainer.querySelectorAll('.dot');
+          dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === slideIndex);
+          });
+        }
+        
+        this.updateNavigationButtons();
+      }
+
+      nextSlide() {
+        if (this.currentSlide < this.getTotalSlides() - 1) {
+          this.goToSlide(this.currentSlide + 1);
+        }
+      }
+
+      previousSlide() {
+        if (this.currentSlide > 0) {
+          this.goToSlide(this.currentSlide - 1);
+        }
+      }
+
+      updateNavigationButtons() {
+        const prevBtn = document.getElementById(`prevBtn${this.sectionId}`);
+        const nextBtn = document.getElementById(`nextBtn${this.sectionId}`);
+        const totalSlides = this.getTotalSlides();
+        
+        if (prevBtn && nextBtn) {
+          if (totalSlides <= 1) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+          } else {
+            prevBtn.style.display = 'flex';
+            nextBtn.style.display = 'flex';
+            
+            prevBtn.disabled = this.currentSlide === 0;
+            nextBtn.disabled = this.currentSlide === totalSlides - 1;
+          }
+        }
+      }
+    }
+
+    // Initialize gallery for this section
+    const images = [
+      {% for block in section.blocks %}
+        {% if block.settings.image %}
+          {
+            url: "{{ block.settings.image | image_url: width: 800 }}",
+            alt: "{{ block.settings.image.alt | escape }}"
+          }{% unless forloop.last %},{% endunless %}
+        {% endif %}
+      {% endfor %}
+    ];
+
+    const settings = {
+      desktopColumns: {{ desktop_columns }},
+      tabletColumns: {{ tablet_columns }},
+      mobileColumns: {{ mobile_columns }},
+      smallMobileColumns: {{ small_mobile_columns }}
+    };
+
+    new ShopifySwipeableGallery('{{ section_id }}', images, settings);
+  });
+</script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Swipeable Image Gallery",
+  "tag": "section",
+  "class": "section-swipeable-gallery",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "range",
+      "id": "max_width",
+      "min": 1200,
+      "max": 2000,
+      "step": 50,
+      "unit": "px",
+      "label": "Maximum width",
+      "default": 1800
+    },
+    {
+      "type": "range",
+      "id": "desktop_padding",
+      "min": 20,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "label": "Desktop horizontal padding",
+      "default": 55
+    },
+    {
+      "type": "range",
+      "id": "mobile_padding",
+      "min": 10,
+      "max": 50,
+      "step": 5,
+      "unit": "px",
+      "label": "Mobile horizontal padding",
+      "default": 20
+    },
+    {
+      "type": "header",
+      "content": "Column Settings"
+    },
+    {
+      "type": "range",
+      "id": "desktop_columns",
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "label": "Desktop columns",
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "tablet_columns",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "label": "Tablet columns",
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "mobile_columns",
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "label": "Mobile columns",
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "small_mobile_columns",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "label": "Small mobile columns",
+      "default": 1
+    },
+    {
+      "type": "header",
+      "content": "Navigation"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_arrows",
+      "label": "Show navigation arrows (desktop only)",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_dots",
+      "label": "Show dot navigation",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Styling"
+    },
+    {
+      "type": "select",
+      "id": "image_aspect_ratio",
+      "options": [
+        {
+          "value": "1/1",
+          "label": "Square (1:1)"
+        },
+        {
+          "value": "4/3",
+          "label": "Landscape (4:3)"
+        },
+        {
+          "value": "3/4",
+          "label": "Portrait (3:4)"
+        },
+        {
+          "value": "16/9",
+          "label": "Wide (16:9)"
+        }
+      ],
+      "default": "1/1",
+      "label": "Image aspect ratio"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Section background color",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "color",
+      "id": "gallery_background",
+      "label": "Gallery background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 30,
+      "step": 2,
+      "unit": "px",
+      "label": "Border radius",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "gap_size",
+      "min": 10,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Gap between images",
+      "default": 20
+    },
+    {
+      "type": "header",
+      "content": "Section Spacing"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Top padding",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Bottom padding",
+      "default": 40
+    }
+  ],
+  "blocks": [
+    {
+      "type": "image",
+      "name": "Gallery Image",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Swipeable Image Gallery",
+      "blocks": [
+        {
+          "type": "image"
+        },
+        {
+          "type": "image"
+        },
+        {
+          "type": "image"
+        },
+        {
+          "type": "image"
+        },
+        {
+          "type": "image"
+        },
+        {
+          "type": "image"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
